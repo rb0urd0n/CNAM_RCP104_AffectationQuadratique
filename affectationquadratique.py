@@ -5,12 +5,10 @@ from math import *
 from time import *
 
 #AFFECTATION QUADRATIQUE
+#Initialisations
 nbModules = 12
 nbColonnes = 4
 modules = [i+1 for i in range(nbModules)]
-#start with 5
-#modules[0] = 5
-#modules[4] = 1
 
 nombresDeLiaisons = [[0 for i in range(nbModules)] for j in range(nbModules)]
 nombresDeLiaisons[1][0] = 180
@@ -44,9 +42,8 @@ nombresDeLiaisons[11][10] = 225
 for i in range(nbModules):
     for j in range(nbModules):
         nombresDeLiaisons[i][j] = nombresDeLiaisons[j][i] 
-#shuffle(modules)
 
-#1 - Distance entre deux emplacements en fonction de d
+#Distance entre deux emplacements en fonction de d unite de distance
 def distanceEntreEmplacements(i, j, d = 1):
     xi = i%nbColonnes
     yi = int(i/nbColonnes)
@@ -56,15 +53,18 @@ def distanceEntreEmplacements(i, j, d = 1):
     deltaY = yi-yj if yi>yj else yj-yi
     return fabs(deltaX+deltaY) * d
 
+#Nombre de liaisons entre module m1 et module m2
 def nombreDeLiaisonsEntreModules(m1,m2):
     return nombresDeLiaisons[m1-1][m2-1]
 
+#Cout entre module m1 et module m2 dans la disposition lesModules
 def coutEntreModules(lesModules, m1, m2):
     #print("==================[",m1,",",m2,"]==================")
     #print("Distance : ", distanceEntreEmplacements(lesModules.index(m1), lesModules.index(m2)))
     #print("Nombre de liaisons :", nombreDeLiaisonsEntreModules(m1, m2))
     return distanceEntreEmplacements(lesModules.index(m1), lesModules.index(m2)) * nombreDeLiaisonsEntreModules(m1, m2)
 
+#Cout de la solution
 def coutSolution(solution):
     cout = 0
     # Comme le nombre de liaisons entre deux modules non lies est de 0
@@ -74,12 +74,14 @@ def coutSolution(solution):
             cout += coutEntreModules(solution, solution[i], solution[j])
     return cout
 
+#Nombre total de liaisons pour module m1 en considerant une distance de 1
 def nombreTotaleDeLiaisonsPourModule(m1):
     liaisons = 0
     for i in range(m1-1,len(nombresDeLiaisons[m1-1])):
         liaisons += nombresDeLiaisons[m1-1][i]
     return liaisons
 
+#Inverse deux modules aléatoirement
 def inverseDeuxModulesAleatoirement(dispositionInitiale):
     module1 = floor(uniform(0, len(dispositionInitiale)))
     module2 = floor(uniform(0, len(dispositionInitiale)))
@@ -87,12 +89,14 @@ def inverseDeuxModulesAleatoirement(dispositionInitiale):
         module2 = floor(uniform(0, len(dispositionInitiale)))
     return inverseDeuxModules(dispositionInitiale, module1, module2)
 
+#Inverse les modules aux positions module1 et module2
 def inverseDeuxModules(dispositionInitiale, module1, module2):
     oldValueModule1 = dispositionInitiale[module1]
     dispositionInitiale[module1] = dispositionInitiale[module2]
     dispositionInitiale[module2] = oldValueModule1
     return dispositionInitiale
 
+#Renverse la sous liste entre depart et arrivee dans la liste
 def renverseSousListe( liste , depart , arrivee ):
     longueur = len( liste )
     while( depart!=arrivee):
@@ -106,6 +110,7 @@ def renverseSousListe( liste , depart , arrivee ):
         arrivee = (arrivee-1)%longueur
     return liste
 
+#Rechercher exhaustive des solutoins avec elagage basique
 def rechercheExhaustiveAvecElagage():
     meilleureSolutionInitiale = (list(modules), coutSolution(modules))
     solutionDepart = []
@@ -117,10 +122,12 @@ def rechercheExhaustiveAvecElagage():
             if len(listModulesPlaces)==1:
                 print("Step : ", listModulesPlaces[0])
             listModulesPlaces.append(module)
+            #Calcul du nouveau cout avec le module ajoute
             for i in range(len(listModulesPlaces)):
                 nouveauCout = nouveauCout + coutEntreModules(listModulesPlaces, listModulesPlaces[i], module)
             #print("Nouveau cout : ",  nouveauCout, " - ", listModulesPlaces)
             if nouveauCout > meilleure_solution[1]:
+                #Elagage
                 listModulesPlaces.pop()
                 return meilleure_solution
 
@@ -129,6 +136,7 @@ def rechercheExhaustiveAvecElagage():
             
             if len( listModulesPlaces ) == nbModules:
                 if nouveauCout < meilleure_solution[1]:
+                    #Une meilleure solution est trouvee
                     print("Meilleur cout : ", nouveauCout, " - ", listModulesPlaces, " < ", meilleure_solution[1])
                     meilleure_solution = (list(listModulesPlaces), nouveauCout)
             else:
@@ -137,6 +145,7 @@ def rechercheExhaustiveAvecElagage():
         return meilleure_solution
     return parcours_recursif(cout, meilleureSolutionInitiale , solutionDepart , modulesAPlacer )
 
+#Recherche exhaustive avec elagage avance
 def rechercheExhaustiveAvecElagageAvance():
     meilleureSolutionInitiale = (list(modules), coutSolution(modules))
     solutionDepart = []
@@ -170,6 +179,7 @@ def rechercheExhaustiveAvecElagageAvance():
         return meilleure_solution
     return parcours_recursif(cout, meilleureSolutionInitiale , solutionDepart , modulesAPlacer )
 
+#Recuit simule
 def recuitSimule( nbIterations, coeffTemperature ):
     meilleureDisposition = list(modules)
     meilleurCout = coutSolution(meilleureDisposition)
@@ -197,49 +207,55 @@ def recuitSimule( nbIterations, coeffTemperature ):
                 
         temperature = coeffTemperature * temperature 
     return ( meilleureDisposition , meilleurCout )
-    
-def algorithmeTabou( solutionInitiale, tailleListeTabou = 10, nbIteration = 500 ):
-    meilleureDisposition = list(solutionInitiale)
-    meilleurCout = coutSolution( meilleureDisposition )
-    meilleureSolution = ( meilleureDisposition , meilleurCout )
-    dispositionCourante = list(meilleureDisposition)
-    coutCourant = meilleurCout
 
-    listeTabou = []
-    for iter in range( nbIteration ):
-        solutionTmp = None
-        coutTmp = None
-        meilleurMouvement = None
-        meilleureSolutionTmp = (None, None)
+#Tabou avec diversification
+def algorithmeTabou( solutionInitiale, tailleListeTabou = 10, nbDiversification = 20, nbIteration = 500, deltaAspiration = 50 ):
+    meilleureDispositionGlobale = list(solutionInitiale)
+    meilleureCoutGlobal = coutSolution(solutionInitiale)
+    meilleureSolutionGlobale = (meilleureDispositionGlobale, meilleureCoutGlobal)
+    
+    for div in range( nbDiversification ) :
+        meilleureDisposition = list(solutionInitiale)
+        shuffle(meilleureDisposition)
+        meilleurCout = coutSolution( meilleureDisposition )
+        meilleureSolution = ( meilleureDisposition , meilleurCout )
+        dispositionCourante = list(meilleureDisposition)
+        coutCourant = meilleurCout
         
-        for i in range( nbModules-1 ):
-            for j in range( i+1 , nbModules ):
-                mouvement = ( i , j )
-                if mouvement not in listeTabou:
-                    solutionTmp = inverseDeuxModules(dispositionCourante, i, j)
-                    coutTmp = coutSolution(solutionTmp)
-                    if meilleureSolutionTmp[0] == None or coutTmp < meilleureSolutionTmp[1]:
-                        meilleureSolutionTmp = (solutionTmp, coutTmp)
-                        meilleurMouvement = mouvement
-        dispositionCourante = list(meilleureSolutionTmp[0])
-        coutCourant = meilleureSolutionTmp[1]
-        if ( coutCourant < meilleurCout ):
-            print("Meilleure solution : ", dispositionCourante, " - ", coutCourant)
-            meilleurCout = coutCourant
-            meilleureSolution = ( list( dispositionCourante ) , meilleurCout )
-        listeTabou.append( meilleurMouvement )
-        if len( listeTabou ) > tailleListeTabou:
-            listeTabou.pop(0)
-    return meilleureSolution
+        listeTabou = []
+        for iter in range( nbIteration ):
+            solutionTmp = None
+            coutTmp = None
+            meilleurMouvement = None
+            meilleureSolutionTmp = (None, None)
+            
+            for i in range( nbModules-1 ):
+                for j in range( i+1 , nbModules ):
+                    mouvement = ( i , j )
+                    if mouvement not in listeTabou:
+                        solutionTmp = inverseDeuxModules(dispositionCourante, i, j)
+                        coutTmp = coutSolution(solutionTmp)
+                        if meilleureSolutionTmp[0] == None or coutTmp < meilleureSolutionTmp[1]:
+                            meilleureSolutionTmp = (solutionTmp, coutTmp)
+                            meilleurMouvement = mouvement
+            dispositionCourante = list(meilleureSolutionTmp[0])
+            coutCourant = meilleureSolutionTmp[1]
+            if ( coutCourant < meilleurCout ):
+                meilleurCout = coutCourant
+                meilleureSolution = ( list( dispositionCourante ) , meilleurCout )
+            listeTabou.append( meilleurMouvement )
+            if len( listeTabou ) > tailleListeTabou:
+                listeTabou.pop(0)
+        if meilleureSolution[1] < meilleureSolutionGlobale[1] :
+            meilleureSolutionGlobale = (list(meilleureSolution[0]), meilleureSolution[1])
+        #print("Diversification n ", div+1, " : ", meilleureSolutionGlobale[0], " - ", meilleureSolutionGlobale[1])
+    return meilleureSolutionGlobale
 
 start_time = time()
 #laSolution = rechercheExhaustiveAvecElagageAvance()
 #laSolution = recuitSimule(10000,0.999)
-modules = list(recuitSimule(10000, 0.999)[0])
-laSolution = algorithmeTabou(modules, 20, 10000)
+laSolution = algorithmeTabou(modules, 15, 15)
 elapsed_time = time() - start_time
-liste = [11, 1, 5, 8, 12, 10, 2, 7, 9, 3, 4, 6]
-liste2=[6,4,3,9,7,2,10,1,8,5,12,11]
 
 print("elapsed time : ", elapsed_time)
 print("solution : ", laSolution[0])
